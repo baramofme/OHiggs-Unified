@@ -1,6 +1,8 @@
 [submodule "openhiggs"]
 	path = openhiggs
 	url = https://github.com/baramofme/open-higgsfield.git
-[submodule "comfy"]
-	path = comfy
-	url = https://github.com/baramofme/OHiggs-Wth-Comfy.git
+	branch = main
+[submodule "comfy-webui"]
+	path = comfy-webui
+	url = https://github.com/baramofme/comfy-webui.git
+	branch = main
