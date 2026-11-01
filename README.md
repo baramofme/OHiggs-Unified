@@ -8,14 +8,18 @@
 
 | 서브모듈 path | 실제 리포 |
 |---|---|
-| `openhiggs/` | `baramofme/open-higgsfield` (OH, Next.js 생성 UI) |
-| `comfy/`     | `baramofme/OHiggs-Wth-Comfy` (Comfy 측 래퍼. 현재는 시드 커밋) |
+| `openhiggs/`    | `baramofme/open-higgsfield` (OH, Next.js 생성 UI) |
+| `comfy-webui/`  | `baramofme/comfy-webui` (Gradio+ComfyUI 생성 백엔드/WaaS, :7861) |
 
-> **주의**: 생성 백엔드인 **comfy-webui**(:7861)와 실제 **ComfyUI**(:8189)는 이 메타 저장소의
-> 서브모듈이 **아닙니다**. comfy-webui는 별도 리포(`baramofme/comfy-webui`)로 **따로 클론**해
-> 런타임 서비스로 띄웁니다. 아래 4-4 런칭 절이 그 별도 클론을 전제로 합니다.
+> **주의**: 생성 백엔드 **comfy-webui**(:7861)는 이제 이 메타 저장소의 **서브모듈**입니다
+> (path `comfy-webui/`). 반면 실제 **ComfyUI** 백엔드(:8189)는 메타 밖의 런타임 서비스로
+> 계속 별도로 돌아갑니다. 아래 4-4 런칭 절이 이 구분을 전제로 합니다.
 >
-> 아래 예시 커맨드에서 서브모듈 경로는 실 path(`openhiggs/`, `comfy/`)를 씁니다.
+> 이 저장소는 2026-11-01 서브모듈 재구성으로 이전 `comfy` 래퍼(시드 커밋)를 제거하고
+> comfy-webui를 서브모듈로 교체했습니다. 과거 클론은 `git submodule update --init --recursive`
+> 후 갱신 시 경로를 `comfy/` → `comfy-webui/`로 바꿔 주세요.
+>
+> 아래 예시 커맨드에서 서브모듈 경로는 실 path(`openhiggs/`, `comfy-webui/`)를 씁니다.
 > 애매하면 `git submodule status`와 `cat .gitmodules`로 실제 경로를 먼저 확인하세요.
 
 ---
@@ -25,10 +29,10 @@
 | 서브모듈 | 역할 | 실행 포트 | GitHub |
 |---|---|---|---|
 | `openhiggs/` (OH) | Next.js 생성 UI 프론트엔드 | **3100** (실 운영. `npm run dev` 기본값은 3000) | `baramofme/open-higgsfield` |
-| `comfy/` (OHiggs-Wth-Comfy) | Comfy 측 래퍼(현재 시드. comfy-webui/ComfyUI는 별도 리포·서비스) | (래퍼 자체는 미실행) | `baramofme/OHiggs-Wth-Comfy` |
+| `comfy-webui/` | Gradio+ComfyUI 생성 백엔드(WaaS 래퍼) | **7861** | `baramofme/comfy-webui` |
 
-- 실제 생성은 그 바깥의 **comfy-webui**(`baramofme/comfy-webui`)가 **7861**에서 Gradio+ComfyUI 래퍼(WaaS)로,
-  그 뒤의 **ComfyUI 백엔드**가 **8189**에서 돌아갑니다. 라이브 리스너는 `ss -ltn`으로 찍어 확인합니다
+- 실제 생성은 메타 서브모듈인 **comfy-webui**가 **7861**에서 Gradio+ComfyUI 래퍼(WaaS)로,
+  그 뒤의 **ComfyUI 백엔드**(메타 밖 서비스)가 **8189**에서 돌아갑니다. 라이브 리스너는 `ss -ltn`으로 찍어 확인합니다
   (`config.yaml`의 기본 포수와 다를 수 있으니 반드시 실 포트를 확인).
 - 모델·입출력 실체는 별도 공유 디렉토리(`ComfyUI-Shared/`)에 있고, comfy-webui의 `allowed_paths`가
   그 `output/`을 Gradio로 노출합니다. (연동절 3번 참조)
@@ -57,7 +61,7 @@ git submodule status
 # 각 서브모듈이 커밋 SHA + (detached HEAD) 로 찍히면 정상
 ```
 
-> comfy-webui(백엔드)까지 쓰려면 별도 클론: `git clone https://github.com/baramofme/comfy-webui.git`
+> `comfy-webui`(백엔드)도 서브모듈이므로 위 재귀 클론/`--init --recursive`로 함께 붙습니다 — 별도 클론 불필요.
 
 ---
 
@@ -81,7 +85,7 @@ git submodule update --remote --merge
 "새 SHA를 가리키겠다"는 변경이 생기므로, 그 가리킴(gitlink SHA)을 커밋해 확정합니다:
 
 ```bash
-git add openhiggs comfy
+git add openhiggs comfy-webui
 git commit -m "bump: 서브모듈 최신 커밋으로 갱신"
 git push
 ```
@@ -106,7 +110,7 @@ git pull --recurse-submodules
 ```bash
 # 특정 서브모듈 상태를 보는 shortcut
 git -C openhiggs branch --show-current
-git -C comfy branch --show-current
+git -C comfy-webui branch --show-current
 
 # 메타가 지정한 SHA가 아니라 자기 원격 브랜치를 추적하게 하려면 .gitmodules의 branch 확인
 cat .gitmodules
@@ -118,7 +122,7 @@ cat .gitmodules
 
 OH의 플랫폼 transport가 **comfy-webui를 직접 호출**하도록 리와이어된 상태입니다(별도 shim 서버 없음).
 즉 UI 위젯은 OH에 이미 있고, 이식 단위는 **transport + 모델별 카탈로그 매퍼**입니다.
-(comfy-webui는 이 메타의 서브모듈이 아니라 별도 클론·서비스입니다 — 클론 절 참조)
+(comfy-webui는 이 메타의 **서브모듈**입니다 — path `comfy-webui/`, 클론 절 참조)
 
 ### 4-1. LAN 모드 스위치 (핵심)
 
@@ -157,8 +161,8 @@ CFWUI_BASE_URL=http://127.0.0.1:7861
 # 1) ComfyUI 백엔드 (:8189) — 보통 이미 떠 있음. 실 포트 확인:
 ss -ltn | grep ':8189' && curl -s http://127.0.0.1:8189/object_info >/dev/null && echo "ComfyUI OK"
 
-# 2) comfy-webui (:7861) — 별도 클론한 baramofme/comfy-webui 리포에서 (COMFYUI_BACKEND_DEFAULT를 라이브 ComfyUI 포트에 맞춘다)
-cd comfy-webui   # ← 이 메타 저장소 밖의 별도 클론
+# 2) comfy-webui (:7861) — 이 메타의 서브모듈 comfy-webui/ (COMFYUI_BACKEND_DEFAULT를 라이브 ComfyUI 포트에 맞춘다)
+cd comfy-webui   # ← 이 메타의 서브모듈
 GRADIO_SERVER_NAME=0.0.0.0 GRADIO_SERVER_PORT=7861 \
   COMFYUI_BACKEND_DEFAULT=http://127.0.0.1:8189 \
   .venv/bin/python app.py
@@ -186,13 +190,13 @@ git submodule summary
 git submodule foreach 'git fetch --all && git checkout main && git pull --ff-only'
 
 # 서브모듈 갱신 후 메타의 gitlink SHA를 커밋으로 확정
-git add openhiggs comfy && git commit -m "bump submodules" && git push
+git add openhiggs comfy-webui && git commit -m "bump submodules" && git push
 
 # 서브모듈을 latest로 따라올리고 커밋
 git submodule update --remote --merge && git commit -am "latest submodules"
 
 # 한쪽 서브모듈만 갱신
-git submodule update --remote comfy
+git submodule update --remote comfy-webui
 
 # 서브모듈 안에서 브랜치 작업 후 메타에 반영: (서브모듈 push) -> 메타의 gitlink SHA 갱신 커밋
 git -C openhiggs push origin main
@@ -227,7 +231,7 @@ git -C openhiggs push origin main
 
 **G. 생성이 "backend에 queue 실패"로 죽는다 (EXECUTION_ERROR)**
 - 400은 ComfyUI가 **살아있는데 그래프 내용을 거부**했다는 뜻(연두절 아님). message의 포트를 믿고 `ss -ltn` + `curl :<port>/object_info` 로 확인.
-- 주범은 대개 **transformer/unet 파일명 mismatch** — 카탈로그가 특정 quant 변형(예 `…-nvfp4.safetensors`)을 하드코딩했는데 실제 설치 파일이 다른 변형(`…-int8-convrot.safetensors`)인 경우. → 편집 대신 **비침습 symlink**: `ln -s <있는파일> <원하는이름>.safetensors` 를 `<comfy>/models/diffusion_models/` 에. 재스캔 후 `/object_info`의 UNETLoader enum에 이름이 뜨면(무재기동) 같은 task_type 재제출.
+- 주범은 대개 **transformer/unet 파일명 mismatch** — 카탈로그가 특정 quant 변형(예 `…-nvfp4.safetensors`)을 하드코딩했는데 실제 설치 파일이 다른 변형(`…-int8-convrot.safetensors`)인 경우. → 편집 대신 **비침습 symlink**: `ln -s <있는파일> <원하는이름>.safetensors` 를 `ComfyUI-Shared/models/diffusion_models/` 에(메타 밖 ComfyUI 설치·공유 트리, 서브모듈 path 아님). 재스캔 후 `/object_info`의 UNETLoader enum에 이름이 뜨면(무재기동) 같은 task_type 재제출.
 
 **H. cfwui(:7861)가 죽고 ComfyUI는 살아있어 갤러리 전채가 빈다**
 - 시스템드 유닛이 없어 자율 재기동합니다. `ss -ltn | grep :7861` + `curl :7861/`(HTTP=000/리스너 없음 = cfwui 다운)로 먼저 진단.
