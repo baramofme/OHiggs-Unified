@@ -1,0 +1,3 @@
+[submodule "openhiggs"]
+	path = openhiggs
+	url = https://github.com/baramofme/open-higgsfield.git
